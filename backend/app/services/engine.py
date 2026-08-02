@@ -54,64 +54,77 @@ def _is_boundary_day(d: date) -> bool:
     return d.day <= BOUNDARY_DAY_START or d.day >= BOUNDARY_DAY_END
 
 
-def compute_levels(bars: pd.DataFrame, prior_close: Optional[float] = None) -> DayLevels:
+def compute_levels(
+    bars: pd.DataFrame,
+    prior_close: Optional[float] = None,
+    prior_bar: Optional[dict] = None,
+) -> DayLevels:
     """
-    bars: DataFrame with columns [bar_time, open, high, low, close], sorted ascending.
-          Must contain at least the first 3 (or 4) H1 bars of the trading day.
-    prior_close: closing price of the last bar of the prior trading day.
+    bars:        DataFrame of THIS trading day's H1 bars only, sorted ascending.
+                 Columns: [bar_date, bar_time, open, high, low, close]
+    prior_close: closing price of the prior trading day's final bar.
+    prior_bar:   the prior trading day's final bar as a dict with
+                 'high' and 'low' keys. Required to build a 4-bar range
+                 when an unfilled gap is detected.
 
     Returns a DayLevels instance.
     """
     trade_date = bars["bar_date"].iloc[0]
     result = DayLevels(trade_date=trade_date)
 
-    first_open = bars.iloc[0]["open"]
+    first3 = bars.iloc[:3]
     is_gap = False
 
     if prior_close is not None:
-        gap = abs(first_open - prior_close)
+        gap = abs(first3.iloc[0]["open"] - prior_close)
         if gap > GAP_FILL_TOLERANCE:
-            # Check if the gap fills within the first 3 bars
-            first3 = bars.iloc[:3]
-            low3 = first3["low"].min()
-            high3 = first3["high"].max()
-            fills = (low3 <= prior_close <= high3)
-            if not fills:
-                is_gap = True
+            # Real gap only if price never trades back through the prior
+            # close within the first three bars.
+            fills = (first3["low"].min() <= prior_close <= first3["high"].max())
+            is_gap = not fills
 
     result.is_gap = is_gap
-    range_bars = bars.iloc[:4] if is_gap else bars.iloc[:3]
 
-    range_high = range_bars["high"].max()
-    range_low = range_bars["low"].min()
+    # Determine the range extremes and their chronological order.
+    # Position 0 represents the prepended prior bar when a gap exists.
+    highs = list(first3["high"])
+    lows = list(first3["low"])
 
-    # Tie: same bar holds both the high and the low
-    high_bar_idx = range_bars["high"].idxmax()
-    low_bar_idx = range_bars["low"].idxmin()
-    if high_bar_idx == low_bar_idx:
+    if is_gap:
+        if prior_bar is None:
+            raise ValueError(
+                f"{trade_date}: unfilled gap detected but prior_bar was not "
+                "supplied — cannot build the 4-bar open range."
+            )
+        highs.insert(0, prior_bar["high"])
+        lows.insert(0, prior_bar["low"])
+
+    high_idx = highs.index(max(highs))
+    low_idx = lows.index(min(lows))
+
+    # Tie: the same bar holds both the range high and the range low.
+    if high_idx == low_idx:
         result.is_tie = True
-        return result  # Cannot assign 0.0/1 without chart confirmation
+        return result
 
-    # Chronological order determines 0.0 vs 1
-    if high_bar_idx < low_bar_idx:
-        # High came first → 1 = high, 0.0 = low
-        point1 = range_high   # 1
-        point2 = range_low    # 0.0
+    range_high = max(highs)
+    range_low = min(lows)
+
+    # Chronological order determines which extreme is 1 vs 0.0
+    if high_idx < low_idx:
+        point1, point2 = range_high, range_low   # high first → 1 = high
     else:
-        # Low came first → 1 = low, 0.0 = high
-        point1 = range_low    # 1
-        point2 = range_high   # 0.0
+        point1, point2 = range_low, range_high   # low first  → 1 = low
 
-    span = point2 - point1   # positive when 0.0 > 1, negative otherwise
+    span = point2 - point1
 
-    result.level_1  = round(point1, 2)
-    result.level_00 = round(point2, 2)
+    result.level_1  = round(float(point1), 2)
+    result.level_00 = round(float(point2), 2)
 
-    # Extensions: ratios from point1 in the direction of span
-    result.level_5_hi = round(point1 + 5 * span, 2)   # $5x
-    result.level_x_hi = round(point1 + 6 * span, 2)   # $x
-    result.level_5_lo = round(point1 - 4 * span, 2)   # 5x
-    result.level_x_lo = round(point1 - 5 * span, 2)   # x
+    result.level_5_hi = round(float(point1 + 5 * span), 2)   # $5x
+    result.level_x_hi = round(float(point1 + 6 * span), 2)   # $x
+    result.level_5_lo = round(float(point1 - 4 * span), 2)   # 5x
+    result.level_x_lo = round(float(point1 - 5 * span), 2)   # x
 
     return result
 

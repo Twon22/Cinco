@@ -1,0 +1,56 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body { font-family: system-ui, sans-serif; background: #0f1117; color: #e2e8f0; }
+
+.navbar {
+  display: flex; align-items: center; gap: 1.5rem;
+  padding: 0.75rem 1.5rem; background: #1a1d27; border-bottom: 1px solid #2d3148;
+}
+.nav-brand { font-weight: 700; font-size: 1.1rem; color: #a78bfa; margin-right: auto; }
+.nav-link { color: #94a3b8; text-decoration: none; font-size: 0.9rem; }
+.nav-link.active { color: #a78bfa; font-weight: 600; }
+
+.content { padding: 1.5rem 2rem; max-width: 1100px; margin: 0 auto; }
+
+h1 { font-size: 1.4rem; margin-bottom: 1rem; color: #f1f5f9; }
+h2 { font-size: 1.1rem; margin-bottom: 0.75rem; color: #cbd5e1; }
+
+table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+th, td { padding: 0.5rem 0.75rem; text-align: left; border-bottom: 1px solid #1e2235; }
+th { color: #64748b; font-weight: 500; }
+tr:hover td { background: #1a1d27; }
+
+.badge {
+  display: inline-block; padding: 0.15rem 0.5rem;
+  border-radius: 9999px; font-size: 0.75rem; font-weight: 600;
+}
+.badge-pending  { background: #1e3a5f; color: #60a5fa; }
+.badge-reviewed { background: #14532d; color: #4ade80; }
+.badge-removed  { background: #3b1c1c; color: #f87171; }
+.badge-x        { background: #3b0764; color: #d8b4fe; }
+.badge-buy      { background: #14532d; color: #4ade80; }
+.badge-sell     { background: #3b1c1c; color: #f87171; }
+
+button {
+  padding: 0.4rem 1rem; border: none; border-radius: 6px;
+  cursor: pointer; font-size: 0.875rem; font-weight: 500;
+}
+.btn-primary   { background: #7c3aed; color: #fff; }
+.btn-secondary { background: #1e2235; color: #94a3b8; }
+
+input, select, textarea {
+  background: #1a1d27; border: 1px solid #2d3148; color: #e2e8f0;
+  border-radius: 6px; padding: 0.4rem 0.75rem; font-size: 0.875rem; width: 100%;
+}
+
+.card { background: #1a1d27; border: 1px solid #2d3148; border-radius: 10px; padding: 1rem 1.25rem; }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+.stat-card { background: #1a1d27; border: 1px solid #2d3148; border-radius: 10px; padding: 1rem; text-align: center; }
+.stat-value { font-size: 1.6rem; font-weight: 700; color: #a78bfa; }
+.stat-label { font-size: 0.75rem; color: #64748b; margin-top: 0.25rem; }
+
+.upload-zone {
+  border: 2px dashed #2d3148; border-radius: 10px; padding: 3rem;
+  text-align: center; cursor: pointer; transition: border-color 0.2s;
+}
+.upload-zone:hover { border-color: #7c3aed; }
